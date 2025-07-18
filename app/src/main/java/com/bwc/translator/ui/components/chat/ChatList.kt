@@ -4,17 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bwc.translator.data.model.ChatState
-import com.bwc.translator.data.model.TranslationEntry
-import com.bwc.translator.data.model.ChatState
-import com.bwc.translator.data.model.TranslationEntry
-import com.bwc.translator.ui.components.InterimBubble
-import kotlin.text.get
+import com.bwc.translator.ui.theme.TextSecondary
 
 
 @Composable
@@ -31,7 +31,9 @@ fun ChatList(
     val copiedStates = remember { mutableStateMapOf<String, Boolean>() }
 
     LaunchedEffect(state.entries.size, state.interimText, state.streamingTranslation) {
-        listState.animateScrollToItem(listState.layoutInfo.totalItemsCount)
+        if (listState.layoutInfo.totalItemsCount > 0) {
+            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+        }
     }
 
     LazyColumn(

@@ -1,16 +1,11 @@
 package com.bwc.translator.ui.components.chat
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.dp
-import com.bwc.translator.data.model.ChatState
-import com.bwc.translator.data.model.TranslationEntry
+import androidx.compose.ui.draw.alpha
 
 @Composable
 fun StreamingTranslationItem(

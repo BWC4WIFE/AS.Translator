@@ -14,10 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bwc.translator.data.model.ChatState
 import com.bwc.translator.ui.components.ControlsBar
 import com.bwc.translator.ui.components.HistoryDialog
+import com.bwc.translator.ui.components.chat.ChatList
 import com.bwc.translator.ui.components.chat.InitialPlaceholder
+import com.bwc.translator.viewmodel.InputMode
 import com.bwc.translator.viewmodel.TranslatorUiState
 import com.bwc.translator.viewmodel.TranslatorViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -28,14 +31,16 @@ import com.google.accompanist.permissions.rememberPermissionState
 @Composable
 fun TranslatorScreen(
     viewModel: TranslatorViewModel = viewModel(),
-    onNavigateToHistory: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsState()
     val recordAudioPermission = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let {
+    // Extract the success state to avoid repeated casting
+    val successState = uiState as? TranslatorUiState.Success
+
+    LaunchedEffect(successState?.error) {
+        successState?.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearError()
         }
@@ -44,7 +49,7 @@ fun TranslatorScreen(
     val showHistoryDialog by viewModel.showHistoryDialog.collectAsState()
     if (showHistoryDialog) {
         HistoryDialog(
-            sessions = uiState.sessions,
+            sessions = successState?.sessions ?: emptyList(),
             onDismiss = { viewModel.toggleHistoryDialog(false) },
             onSessionClick = { viewModel.loadSession(it) },
             onDeleteClick = { viewModel.deleteSession(it) },
@@ -55,9 +60,9 @@ fun TranslatorScreen(
     Scaffold(
         bottomBar = {
             ControlsBar(
-                isListening = uiState.isListening,
-                isInputEnglish = uiState.isInputEnglish,
-                inputMode = uiState.inputMode,
+                isListening = successState?.isListening ?: false,
+                isInputEnglish = successState?.isInputEnglish ?: true,
+                inputMode = successState?.inputMode ?: InputMode.HOLD,
                 isMicEnabled = recordAudioPermission.status.isGranted,
                 onMicPress = {
                     if (recordAudioPermission.status.isGranted) {
@@ -92,15 +97,20 @@ fun TranslatorScreen(
                     }
                 }
                 is TranslatorUiState.Success -> {
-                    if (state.currentEntries.isEmpty() && state.interimText.isBlank()) {
+                    if (state.currentEntries.isEmpty() && state.interimText.isBlank() && state.streamingTranslation == null) {
                         InitialPlaceholder(text = "Tap or hold the mic to start.")
                     } else {
-                        ChatList(
+                        // Create a ChatState object from the UI state
+                        val chatState = ChatState(
                             entries = state.currentEntries,
                             interimText = state.interimText,
                             isInputEnglish = state.isInputEnglish,
-                            streamingTranslation = state.streamingTranslation,
-                            onSpeak = { text, isEnglish -> viewModel.speak(text, isEnglish) }
+                            streamingTranslation = state.streamingTranslation
+                        )
+                        ChatList(
+                            state = chatState,
+                            onSpeakEnglish = { text -> viewModel.speak(text, isEnglish = true) },
+                            onSpeakThai = { text -> viewModel.speak(text, isEnglish = false) }
                         )
                     }
                 }
